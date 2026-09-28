@@ -29,19 +29,27 @@ export default function AnalysisPage({ params }: { params: { jobId: string } }) 
   const [progress, setProgress] = useState<JobProgress | null>(null);
   const [finalAnalysis, setFinalAnalysis] = useState<FinalAnalysis | null>(null);
   const [error, setError] = useState<string | null>(null);
+  const [connectionIssue, setConnectionIssue] = useState<string | null>(null);
   const [tab, setTab] = useState<Tab>("summary");
   const [selectedRequirement, setSelectedRequirement] = useState<string | null>(null);
   const pollRef = useRef<ReturnType<typeof setInterval> | null>(null);
 
+  const hasLoadedRef = useRef(false);
+
   useEffect(() => {
     let cancelled = false;
+    let consecutiveFailures = 0;
 
     async function poll() {
       try {
-        const p = await getJobProgress(jobId);
+        const p = await getJobProgress(jobId, () =>
+          setConnectionIssue("Waking up the backend — this can take up to a minute on the free tier...")
+        );
         if (cancelled) return;
+        hasLoadedRef.current = true;
         setProgress(p);
-        setError(null);
+        setConnectionIssue(null);
+        consecutiveFailures = 0;
 
         if (p.status === "completed") {
           if (pollRef.current) clearInterval(pollRef.current);
@@ -52,8 +60,17 @@ export default function AnalysisPage({ params }: { params: { jobId: string } }) 
           setError(p.error || "Analysis failed.");
         }
       } catch (err) {
-        if (!cancelled) {
-          setError(err instanceof ApiError ? err.message : "Could not reach the backend API.");
+        if (cancelled) return;
+        consecutiveFailures += 1;
+        const message = err instanceof ApiError ? err.message : "Could not reach the backend API.";
+        // We already have a job to show — don't blow away the progress view over one
+        // flaky poll, just surface a soft banner and let the next tick retry.
+        // Only escalate to the hard error screen if nothing has ever loaded, or the
+        // backend has been unreachable for a sustained stretch (~5 consecutive polls).
+        if (!hasLoadedRef.current || consecutiveFailures >= 5) {
+          setError(message);
+        } else {
+          setConnectionIssue(message);
         }
       }
     }
@@ -80,7 +97,9 @@ export default function AnalysisPage({ params }: { params: { jobId: string } }) 
   if (!progress) {
     return (
       <main>
-        <p className="text-sm text-gray-500">Loading job status...</p>
+        <p className="text-sm text-gray-500">
+          {connectionIssue || "Loading job status..."}
+        </p>
       </main>
     );
   }
@@ -88,6 +107,11 @@ export default function AnalysisPage({ params }: { params: { jobId: string } }) 
   if (progress.status !== "completed" || !finalAnalysis) {
     return (
       <main>
+        {connectionIssue && (
+          <div className="mb-4 rounded-md bg-amber-50 px-3 py-2 text-sm text-amber-800">
+            {connectionIssue}
+          </div>
+        )}
         <ProgressView progress={progress} />
       </main>
     );

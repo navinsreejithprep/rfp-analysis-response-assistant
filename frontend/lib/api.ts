@@ -29,8 +29,52 @@ async function handle<T>(res: Response): Promise<T> {
   return res.json() as Promise<T>;
 }
 
-export async function listKnowledgeBaseDocuments(): Promise<{ documents: string[] }> {
-  const res = await fetch(`${API_URL}/api/knowledge-base/documents`, { cache: "no-store" });
+function sleep(ms: number): Promise<void> {
+  return new Promise((resolve) => setTimeout(resolve, ms));
+}
+
+// Render's free tier spins the backend down after ~15 minutes idle; the first
+// request after that either fails outright (connection refused) or gets a
+// 502/503/504 from Render's proxy while the container is still starting,
+// which can take 30-60s. Retry with backoff instead of surfacing a hard
+// error on what is usually just a cold start, not an actual outage.
+const RETRY_DELAYS_MS = [1500, 3000, 6000, 8000, 8000, 8000];
+
+async function fetchWithRetry(
+  url: string,
+  options: RequestInit = {},
+  onRetry?: (attempt: number, maxAttempts: number) => void
+): Promise<Response> {
+  for (let attempt = 0; attempt <= RETRY_DELAYS_MS.length; attempt++) {
+    try {
+      const res = await fetch(url, options);
+      if ([502, 503, 504].includes(res.status) && attempt < RETRY_DELAYS_MS.length) {
+        onRetry?.(attempt + 1, RETRY_DELAYS_MS.length);
+        await sleep(RETRY_DELAYS_MS[attempt]);
+        continue;
+      }
+      return res;
+    } catch (err) {
+      if (attempt < RETRY_DELAYS_MS.length) {
+        onRetry?.(attempt + 1, RETRY_DELAYS_MS.length);
+        await sleep(RETRY_DELAYS_MS[attempt]);
+        continue;
+      }
+      throw err;
+    }
+  }
+  // Unreachable given the loop above always returns or throws on the last attempt.
+  throw new Error("Could not reach the backend API.");
+}
+
+export async function listKnowledgeBaseDocuments(
+  onRetry?: (attempt: number, maxAttempts: number) => void
+): Promise<{ documents: string[] }> {
+  const res = await fetchWithRetry(
+    `${API_URL}/api/knowledge-base/documents`,
+    { cache: "no-store" },
+    onRetry
+  );
   return handle(res);
 }
 
@@ -56,8 +100,11 @@ export async function analyzeRfp(file: File): Promise<{ job_id: string }> {
   return handle(res);
 }
 
-export async function getJobProgress(jobId: string): Promise<JobProgress> {
-  const res = await fetch(`${API_URL}/api/jobs/${jobId}`, { cache: "no-store" });
+export async function getJobProgress(
+  jobId: string,
+  onRetry?: (attempt: number, maxAttempts: number) => void
+): Promise<JobProgress> {
+  const res = await fetchWithRetry(`${API_URL}/api/jobs/${jobId}`, { cache: "no-store" }, onRetry);
   return handle(res);
 }
 
@@ -65,14 +112,14 @@ export async function getRequirementDetail(
   jobId: string,
   requirementId: string
 ): Promise<RequirementResult> {
-  const res = await fetch(`${API_URL}/api/jobs/${jobId}/requirements/${requirementId}`, {
+  const res = await fetchWithRetry(`${API_URL}/api/jobs/${jobId}/requirements/${requirementId}`, {
     cache: "no-store",
   });
   return handle(res);
 }
 
 export async function getFinalAnalysis(jobId: string): Promise<FinalAnalysis> {
-  const res = await fetch(`${API_URL}/api/jobs/${jobId}/final`, { cache: "no-store" });
+  const res = await fetchWithRetry(`${API_URL}/api/jobs/${jobId}/final`, { cache: "no-store" });
   return handle(res);
 }
 
@@ -81,6 +128,6 @@ export function exportUrl(jobId: string): string {
 }
 
 export async function getEvalResults(): Promise<EvalResults> {
-  const res = await fetch(`${API_URL}/api/eval/results`, { cache: "no-store" });
+  const res = await fetchWithRetry(`${API_URL}/api/eval/results`, { cache: "no-store" });
   return handle(res);
 }

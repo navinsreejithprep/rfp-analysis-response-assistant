@@ -13,6 +13,7 @@ export default function HomePage() {
   const router = useRouter();
   const [documents, setDocuments] = useState<string[] | null>(null);
   const [kbError, setKbError] = useState<string | null>(null);
+  const [wakingUp, setWakingUp] = useState(false);
   const [uploading, setUploading] = useState(false);
 
   const [rfpFile, setRfpFile] = useState<File | null>(null);
@@ -23,11 +24,13 @@ export default function HomePage() {
 
   async function refreshDocuments() {
     try {
-      const { documents } = await listKnowledgeBaseDocuments();
+      const { documents } = await listKnowledgeBaseDocuments(() => setWakingUp(true));
       setDocuments(documents);
       setKbError(null);
     } catch (err) {
       setKbError(err instanceof ApiError ? err.message : "Could not reach the backend API.");
+    } finally {
+      setWakingUp(false);
     }
   }
 
@@ -91,6 +94,13 @@ export default function HomePage() {
           Seeded automatically with a synthetic demo company knowledge base on first run. Add
           your own reference documents (PDF, DOCX, TXT, MD) to extend it.
         </p>
+
+        {wakingUp && !kbError && (
+          <div className="mt-3 rounded-md bg-amber-50 px-3 py-2 text-sm text-amber-800">
+            Waking up the backend — it spins down after inactivity on the free tier, this can take
+            up to a minute...
+          </div>
+        )}
 
         {kbError && (
           <div className="mt-3 rounded-md bg-red-50 px-3 py-2 text-sm text-red-700">{kbError}</div>
