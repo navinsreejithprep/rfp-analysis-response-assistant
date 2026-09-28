@@ -139,7 +139,9 @@ is plain Python, on purpose (see §12).
    One call per section keeps output well under the model's max-tokens ceiling regardless of RFP
    size — the earlier single-call version failed outright on a large real RFP during testing (see
    §13). The prompt is explicit that pure background/narrative sections should yield an *empty*
-   list, since per-section framing loses the whole-document context that made that obvious.
+   list, since per-section framing loses the whole-document context that made that obvious. Section
+   calls are independent, so they run concurrently via `.batch()` (`max_concurrency=8`) instead of
+   one at a time — on the 8-section sample RFP this cut extraction from ~30-40s to ~5s.
 3. **classify_requirements** *(LLM, structured output)* — reviews the *full list at once* to
    apply a consistent category taxonomy (catches the case where two similar requirements would
    otherwise get inconsistent categories from independent single-item classification).

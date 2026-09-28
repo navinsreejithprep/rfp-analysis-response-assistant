@@ -127,20 +127,29 @@ def split_into_sections(text: str) -> list[str]:
 
 def extract_requirements(state: GraphState) -> dict:
     llm = structured(RequirementList)
-    requirements: list[dict] = []
+    sections = split_into_sections(state["rfp_text"])
 
-    for section_text in split_into_sections(state["rfp_text"]):
-        result: RequirementList = llm.invoke(
-            [
-                SystemMessage(content=prompts.EXTRACT_REQUIREMENTS_SYSTEM),
-                HumanMessage(
-                    content=(
-                        "RFP SECTION (one part of a larger RFP — extract only requirements "
-                        f"found in THIS excerpt):\n\n{section_text}"
-                    )
-                ),
-            ]
-        )
+    message_batches = [
+        [
+            SystemMessage(content=prompts.EXTRACT_REQUIREMENTS_SYSTEM),
+            HumanMessage(
+                content=(
+                    "RFP SECTION (one part of a larger RFP — extract only requirements "
+                    f"found in THIS excerpt):\n\n{section_text}"
+                )
+            ),
+        ]
+        for section_text in sections
+    ]
+    # Sections have no dependency on each other, so run all extraction calls
+    # concurrently instead of one at a time — sequential calls made
+    # extraction the slowest part of the pipeline once large RFPs forced
+    # section-by-section calls (see split_into_sections above). `.batch()`
+    # preserves input order in its results.
+    section_results: list[RequirementList] = llm.batch(message_batches, config={"max_concurrency": 8})
+
+    requirements: list[dict] = []
+    for result in section_results:
         requirements.extend(r.model_dump(mode="json") for r in result.requirements)
 
     # Each section's LLM call restarts numbering at R-001, so renumber
