@@ -1,0 +1,401 @@
+{
+  "generated_at": "2026-09-28T02:30:35.856971+00:00",
+  "model": "gpt-4o-mini",
+  "embedding_model": "text-embedding-3-small",
+  "requirement_extraction": {
+    "expected_count": 19,
+    "extracted_count": 19,
+    "extraction_ratio": 1.0,
+    "field_completeness_rate": 1.0
+  },
+  "retrieval": {
+    "cases_evaluated": 11,
+    "hit_rate": 1.0,
+    "details": [
+      {
+        "requirement_id": "R-EVAL-01",
+        "expected": [
+          "case_studies.md",
+          "past_project_experience.md"
+        ],
+        "retrieved": [
+          "ai_data_capabilities.md",
+          "case_studies.md",
+          "past_project_experience.md"
+        ],
+        "hit": true
+      },
+      {
+        "requirement_id": "R-EVAL-02",
+        "expected": [
+          "case_studies.md",
+          "ai_data_capabilities.md"
+        ],
+        "retrieved": [
+          "case_studies.md",
+          "team_credentials.md"
+        ],
+        "hit": true
+      },
+      {
+        "requirement_id": "R-EVAL-03",
+        "expected": [
+          "technology_capabilities.md"
+        ],
+        "retrieved": [
+          "case_studies.md",
+          "cloud_capabilities.md",
+          "technology_capabilities.md"
+        ],
+        "hit": true
+      },
+      {
+        "requirement_id": "R-EVAL-04",
+        "expected": [
+          "cybersecurity_capabilities.md",
+          "certifications.md"
+        ],
+        "retrieved": [
+          "certifications.md",
+          "cybersecurity_capabilities.md"
+        ],
+        "hit": true
+      },
+      {
+        "requirement_id": "R-EVAL-05",
+        "expected": [
+          "cybersecurity_capabilities.md"
+        ],
+        "retrieved": [
+          "ai_data_capabilities.md",
+          "certifications.md",
+          "cybersecurity_capabilities.md"
+        ],
+        "hit": true
+      },
+      {
+        "requirement_id": "R-EVAL-06",
+        "expected": [
+          "cloud_capabilities.md",
+          "case_studies.md"
+        ],
+        "retrieved": [
+          "case_studies.md",
+          "certifications.md",
+          "cloud_capabilities.md"
+        ],
+        "hit": true
+      },
+      {
+        "requirement_id": "R-EVAL-07",
+        "expected": [
+          "delivery_methodology.md"
+        ],
+        "retrieved": [
+          "cloud_capabilities.md",
+          "cybersecurity_capabilities.md",
+          "delivery_methodology.md",
+          "team_credentials.md"
+        ],
+        "hit": true
+      },
+      {
+        "requirement_id": "R-EVAL-08",
+        "expected": [
+          "company_overview.md"
+        ],
+        "retrieved": [
+          "certifications.md",
+          "company_overview.md",
+          "cybersecurity_capabilities.md"
+        ],
+        "hit": true
+      },
+      {
+        "requirement_id": "R-EVAL-09",
+        "expected": [
+          "delivery_methodology.md"
+        ],
+        "retrieved": [
+          "cloud_capabilities.md",
+          "delivery_methodology.md",
+          "team_credentials.md"
+        ],
+        "hit": true
+      },
+      {
+        "requirement_id": "R-EVAL-10",
+        "expected": [
+          "certifications.md",
+          "team_credentials.md"
+        ],
+        "retrieved": [
+          "certifications.md",
+          "team_credentials.md"
+        ],
+        "hit": true
+      },
+      {
+        "requirement_id": "R-EVAL-11",
+        "expected": [
+          "team_credentials.md"
+        ],
+        "retrieved": [
+          "case_studies.md",
+          "certifications.md",
+          "past_project_experience.md",
+          "team_credentials.md"
+        ],
+        "hit": true
+      }
+    ]
+  },
+  "capability_classification": {
+    "cases_evaluated": 11,
+    "accuracy": 0.727,
+    "details": [
+      {
+        "requirement_id": "R-EVAL-01",
+        "expected": "Fully Supported",
+        "predicted": "Fully Supported",
+        "correct": true
+      },
+      {
+        "requirement_id": "R-EVAL-02",
+        "expected": "Fully Supported",
+        "predicted": "Fully Supported",
+        "correct": true
+      },
+      {
+        "requirement_id": "R-EVAL-03",
+        "expected": "Not Supported",
+        "predicted": "Not Supported",
+        "correct": true
+      },
+      {
+        "requirement_id": "R-EVAL-04",
+        "expected": "Insufficient Evidence",
+        "predicted": "Not Supported",
+        "correct": false
+      },
+      {
+        "requirement_id": "R-EVAL-05",
+        "expected": "Not Supported",
+        "predicted": "Not Supported",
+        "correct": true
+      },
+      {
+        "requirement_id": "R-EVAL-06",
+        "expected": "Partially Supported",
+        "predicted": "Not Supported",
+        "correct": false
+      },
+      {
+        "requirement_id": "R-EVAL-07",
+        "expected": "Not Supported",
+        "predicted": "Not Supported",
+        "correct": true
+      },
+      {
+        "requirement_id": "R-EVAL-08",
+        "expected": "Insufficient Evidence",
+        "predicted": "Not Supported",
+        "correct": false
+      },
+      {
+        "requirement_id": "R-EVAL-09",
+        "expected": "Fully Supported",
+        "predicted": "Fully Supported",
+        "correct": true
+      },
+      {
+        "requirement_id": "R-EVAL-10",
+        "expected": "Fully Supported",
+        "predicted": "Fully Supported",
+        "correct": true
+      },
+      {
+        "requirement_id": "R-EVAL-11",
+        "expected": "Not Supported",
+        "predicted": "Not Supported",
+        "correct": true
+      }
+    ]
+  },
+  "evidence_grounding": {
+    "cases_evaluated": 12,
+    "grounding_rate": 0.75,
+    "details": [
+      {
+        "requirement_id": "R-EVAL-01",
+        "citations": [
+          "case_studies.md",
+          "ai_data_capabilities.md"
+        ],
+        "available_evidence_sources": [
+          "ai_data_capabilities.md",
+          "case_studies.md",
+          "past_project_experience.md"
+        ],
+        "fully_grounded": true
+      },
+      {
+        "requirement_id": "R-EVAL-02",
+        "citations": [
+          "case_studies.md"
+        ],
+        "available_evidence_sources": [
+          "case_studies.md",
+          "team_credentials.md"
+        ],
+        "fully_grounded": true
+      },
+      {
+        "requirement_id": "R-EVAL-03",
+        "citations": [],
+        "available_evidence_sources": [
+          "case_studies.md",
+          "cloud_capabilities.md",
+          "technology_capabilities.md"
+        ],
+        "fully_grounded": false
+      },
+      {
+        "requirement_id": "R-EVAL-04",
+        "citations": [
+          "cybersecurity_capabilities.md",
+          "certifications.md"
+        ],
+        "available_evidence_sources": [
+          "certifications.md",
+          "cybersecurity_capabilities.md"
+        ],
+        "fully_grounded": true
+      },
+      {
+        "requirement_id": "R-EVAL-05",
+        "citations": [
+          "cybersecurity_capabilities.md",
+          "certifications.md"
+        ],
+        "available_evidence_sources": [
+          "ai_data_capabilities.md",
+          "certifications.md",
+          "cybersecurity_capabilities.md"
+        ],
+        "fully_grounded": true
+      },
+      {
+        "requirement_id": "R-EVAL-06",
+        "citations": [],
+        "available_evidence_sources": [
+          "case_studies.md",
+          "certifications.md",
+          "cloud_capabilities.md"
+        ],
+        "fully_grounded": false
+      },
+      {
+        "requirement_id": "R-EVAL-07",
+        "citations": [
+          "delivery_methodology.md"
+        ],
+        "available_evidence_sources": [
+          "cloud_capabilities.md",
+          "cybersecurity_capabilities.md",
+          "delivery_methodology.md",
+          "team_credentials.md"
+        ],
+        "fully_grounded": true
+      },
+      {
+        "requirement_id": "R-EVAL-08",
+        "citations": [
+          "company_overview.md"
+        ],
+        "available_evidence_sources": [
+          "certifications.md",
+          "company_overview.md",
+          "cybersecurity_capabilities.md"
+        ],
+        "fully_grounded": true
+      },
+      {
+        "requirement_id": "R-EVAL-09",
+        "citations": [
+          "delivery_methodology.md"
+        ],
+        "available_evidence_sources": [
+          "cloud_capabilities.md",
+          "delivery_methodology.md",
+          "team_credentials.md"
+        ],
+        "fully_grounded": true
+      },
+      {
+        "requirement_id": "R-EVAL-10",
+        "citations": [
+          "certifications.md",
+          "team_credentials.md"
+        ],
+        "available_evidence_sources": [
+          "certifications.md",
+          "team_credentials.md"
+        ],
+        "fully_grounded": true
+      },
+      {
+        "requirement_id": "R-EVAL-11",
+        "citations": [],
+        "available_evidence_sources": [
+          "case_studies.md",
+          "certifications.md",
+          "past_project_experience.md",
+          "team_credentials.md"
+        ],
+        "fully_grounded": false
+      },
+      {
+        "requirement_id": "R-EVAL-12",
+        "citations": [
+          "certifications.md",
+          "cybersecurity_capabilities.md"
+        ],
+        "available_evidence_sources": [
+          "certifications.md",
+          "cybersecurity_capabilities.md",
+          "delivery_methodology.md",
+          "team_credentials.md"
+        ],
+        "fully_grounded": true
+      }
+    ]
+  },
+  "ambiguous_requirement_handling": {
+    "requirement_id": "R-EVAL-12",
+    "predicted_capability_status": "Not Supported",
+    "gap_type": "Capability Gap",
+    "requires_human_review": true,
+    "handled_as_expected": true
+  },
+  "response_validation": {
+    "cases_evaluated": 2,
+    "recall_on_flawed_drafts": 1.0,
+    "details": [
+      {
+        "requirement_id": "R-EVAL-07",
+        "reason_for_flaw": "Response directly contradicts the evidence, which states 24/7/365 support is NOT currently offered.",
+        "expected_revision_required": true,
+        "actual_revision_required": true,
+        "correctly_caught": true
+      },
+      {
+        "requirement_id": "R-EVAL-04",
+        "reason_for_flaw": "No citation is present, and the claim directly contradicts the evidence.",
+        "expected_revision_required": true,
+        "actual_revision_required": true,
+        "correctly_caught": true
+      }
+    ]
+  }
+}
