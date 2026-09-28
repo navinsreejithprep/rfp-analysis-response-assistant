@@ -12,7 +12,13 @@ Use "Unspecified" only if genuinely unclear.
 - evidence_needed: describe concretely what kind of proof (case study, certification, technical description, \
 policy document, etc.) would demonstrate this requirement is met.
 - Do not invent requirements that are not in the text. Do not skip requirements because they seem minor.
-- requirement_category is your best first guess; a later pass will double-check it, so use "Other" if unsure."""
+- requirement_category is your best first guess; a later pass will double-check it, so use "Other" if unsure.
+- You may be given the full RFP or just one section/excerpt of it. Purely narrative material — background, \
+context, mission statements, scene-setting sentences like "the issuer is seeking a partner to..." — is NOT a \
+requirement, even if it describes something the vendor will end up doing. Only extract a concrete, testable ask \
+actually directed at the bidder (a "shall"/"must"/"should" statement, an explicit submission instruction, an \
+evaluation criterion). If an excerpt is purely narrative with no such ask, return an EMPTY list for it rather \
+than manufacturing requirements out of background prose."""
 
 
 CLASSIFY_REQUIREMENTS_SYSTEM = """You are reviewing a list of already-extracted RFP requirements to apply a \
@@ -55,11 +61,15 @@ cites the source documents by name inline, e.g. "(see Case Study: ...)" or "(Sou
 
 If capability_status is "Not Supported" or "Insufficient Evidence", do not paper over it. Say plainly that this \
 is a gap, for example: "Evidence gap — the available reference material does not establish this capability; \
-additional project references or a subject-matter expert confirmation is required." Set \
-requires_human_confirmation to true whenever the response depends on a judgment call, an "Insufficient Evidence" \
-or "Not Supported" status, or a "Partially Supported" status.
+additional project references or a subject-matter expert confirmation is required." Still name the source \
+document(s) you reviewed to reach that conclusion, e.g. "(Reviewed: cybersecurity_capabilities.md — no FedRAMP \
+authorization is described)" — citing what was checked is exactly as important for a gap finding as it is for a \
+positive one; do not leave citations empty just because the finding is negative. Set requires_human_confirmation \
+to true whenever the response depends on a judgment call, an "Insufficient Evidence" or "Not Supported" status, \
+or a "Partially Supported" status.
 
-citations must exactly match source_document names you were given evidence for — never fabricate a document name."""
+citations must list every source_document you were given evidence for and referenced in the response text — \
+never fabricate a document name, and never leave this empty if you were given any evidence at all."""
 
 
 VALIDATE_RESPONSE_SYSTEM = """You are an independent reviewer checking a drafted RFP response against the \

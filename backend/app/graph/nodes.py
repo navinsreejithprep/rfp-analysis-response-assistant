@@ -12,6 +12,7 @@ from __future__ import annotations
 import re
 
 from langchain_core.messages import HumanMessage, SystemMessage
+from langchain_text_splitters import RecursiveCharacterTextSplitter
 
 from app import config
 from app.graph import prompts
@@ -60,18 +61,93 @@ def ingest_rfp(state: GraphState) -> dict:
 
 
 # ---------------------------------------------------------------------------
-# extract_requirements — LLM (structured output)
+# extract_requirements — LLM (structured output), chunked by section
 # ---------------------------------------------------------------------------
+
+# A single extract_requirements call asks the model to return a full
+# Requirement object (6-7 fields each) per requirement it finds. On a large
+# RFP with dozens of requirements, that output can exceed the model's max
+# output tokens and come back truncated (invalid JSON) — this happened in
+# practice at ~23k input tokens. Splitting the RFP into sections first keeps
+# each call's output comfortably within the model's limit regardless of
+# overall RFP size.
+_MD_HEADER_RE = re.compile(r"^#{2,6}\s+.+$", re.MULTILINE)
+_PLAIN_HEADER_RE = re.compile(
+    r"^(?:SECTION\s+)?(\d{1,2})\.\s+[A-Z][A-Za-z0-9 /&,'-]{2,80}$", re.MULTILINE
+)
+MAX_SECTION_CHARS = 6000
+
+_section_safety_splitter = RecursiveCharacterTextSplitter(
+    chunk_size=MAX_SECTION_CHARS,
+    chunk_overlap=300,
+    separators=["\n\n", "\n", ". ", " ", ""],
+)
+
+
+def split_into_sections(text: str) -> list[str]:
+    """Split RFP text on its own section headings so each extraction call
+    only has to cover one section's worth of requirements.
+
+    Tries Markdown ATX headers first (``## 2. Functional Requirements``),
+    then falls back to plain numbered top-level headings (``2. Technical
+    Requirements`` / ``SECTION 2. ...``) for RFPs without Markdown structure.
+    If neither pattern finds at least 2 headings, the RFP has no detectable
+    section structure — it's kept as one chunk, but run through a
+    fixed-size safety-net splitter (used for any oversized section too) so
+    a single extraction call still can't be asked to cover an unbounded
+    amount of text.
+    """
+    headers = list(_MD_HEADER_RE.finditer(text))
+    if len(headers) < 2:
+        headers = list(_PLAIN_HEADER_RE.finditer(text))
+
+    if len(headers) < 2:
+        sections = [text]
+    else:
+        sections = []
+        for i, h in enumerate(headers):
+            start = h.start()
+            end = headers[i + 1].start() if i + 1 < len(headers) else len(text)
+            sections.append(text[start:end].strip())
+        if headers[0].start() > 0:
+            preamble = text[: headers[0].start()].strip()
+            if preamble:
+                sections[0] = f"{preamble}\n\n{sections[0]}"
+
+    final_sections: list[str] = []
+    for section in sections:
+        if not section.strip():
+            continue
+        if len(section) > MAX_SECTION_CHARS:
+            final_sections.extend(_section_safety_splitter.split_text(section))
+        else:
+            final_sections.append(section)
+    return final_sections
+
 
 def extract_requirements(state: GraphState) -> dict:
     llm = structured(RequirementList)
-    result: RequirementList = llm.invoke(
-        [
-            SystemMessage(content=prompts.EXTRACT_REQUIREMENTS_SYSTEM),
-            HumanMessage(content=f"RFP TEXT:\n\n{state['rfp_text']}"),
-        ]
-    )
-    requirements = [r.model_dump(mode="json") for r in result.requirements]
+    requirements: list[dict] = []
+
+    for section_text in split_into_sections(state["rfp_text"]):
+        result: RequirementList = llm.invoke(
+            [
+                SystemMessage(content=prompts.EXTRACT_REQUIREMENTS_SYSTEM),
+                HumanMessage(
+                    content=(
+                        "RFP SECTION (one part of a larger RFP — extract only requirements "
+                        f"found in THIS excerpt):\n\n{section_text}"
+                    )
+                ),
+            ]
+        )
+        requirements.extend(r.model_dump(mode="json") for r in result.requirements)
+
+    # Each section's LLM call restarts numbering at R-001, so renumber
+    # sequentially across the combined, ordered list.
+    for i, req in enumerate(requirements, start=1):
+        req["requirement_id"] = f"R-{i:03d}"
+
     return {
         "requirements": requirements,
         "current_index": 0,

@@ -28,20 +28,19 @@ import json
 from datetime import datetime, timezone
 from pathlib import Path
 
-from langchain_core.messages import HumanMessage, SystemMessage
-
 from app import config
-from app.graph import nodes, prompts
-from app.graph.llm import structured
-from app.models.schemas import RequirementList
+from app.graph import nodes
 from app.rag import vectorstore
 from eval.dataset import REQUIREMENT_CASES, VALIDATION_CASES
 
 RESULTS_PATH = Path(__file__).resolve().parent / "results.json"
 SAMPLE_RFP_PATH = Path(__file__).resolve().parent.parent / "data" / "sample_rfp" / "sample_rfp.md"
 
-# Manually counted numbered requirement statements in sample_rfp.md (sections 2-8).
-EXPECTED_RFP_REQUIREMENT_COUNT = 19
+# Manually counted requirement statements in sample_rfp.md: the 19 numbered
+# items in sections 2-8, plus the response-deadline commitment in the header
+# ("Proposals must be submitted within 30 days...") — a genuine requirement
+# that's easy to undercount if you only look at the numbered body items.
+EXPECTED_RFP_REQUIREMENT_COUNT = 20
 
 REQUIRED_REQUIREMENT_FIELDS = [
     "requirement_id",
@@ -68,14 +67,10 @@ def _case_to_requirement_dict(case: dict) -> dict:
 
 def eval_requirement_extraction() -> dict:
     text = SAMPLE_RFP_PATH.read_text(encoding="utf-8")
-    llm = structured(RequirementList)
-    result: RequirementList = llm.invoke(
-        [
-            SystemMessage(content=prompts.EXTRACT_REQUIREMENTS_SYSTEM),
-            HumanMessage(content=f"RFP TEXT:\n\n{text}"),
-        ]
-    )
-    extracted = [r.model_dump(mode="json") for r in result.requirements]
+    # Calls the same node the live app uses (including its section-chunking),
+    # not a re-implementation of the extraction call.
+    result = nodes.extract_requirements({"rfp_text": text})
+    extracted = result["requirements"]
     complete = sum(
         1 for r in extracted if all(str(r.get(f, "")).strip() for f in REQUIRED_REQUIREMENT_FIELDS)
     )

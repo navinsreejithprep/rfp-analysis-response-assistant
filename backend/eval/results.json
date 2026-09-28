@@ -1,10 +1,10 @@
 {
-  "generated_at": "2026-09-28T02:30:35.856971+00:00",
+  "generated_at": "2026-09-28T09:30:40.460660+00:00",
   "model": "gpt-4o-mini",
   "embedding_model": "text-embedding-3-small",
   "requirement_extraction": {
-    "expected_count": 19,
-    "extracted_count": 19,
+    "expected_count": 20,
+    "extracted_count": 20,
     "extraction_ratio": 1.0,
     "field_completeness_rate": 1.0
   },
@@ -224,12 +224,13 @@
   },
   "evidence_grounding": {
     "cases_evaluated": 12,
-    "grounding_rate": 0.75,
+    "grounding_rate": 1.0,
     "details": [
       {
         "requirement_id": "R-EVAL-01",
         "citations": [
           "case_studies.md",
+          "past_project_experience.md",
           "ai_data_capabilities.md"
         ],
         "available_evidence_sources": [
@@ -252,13 +253,15 @@
       },
       {
         "requirement_id": "R-EVAL-03",
-        "citations": [],
+        "citations": [
+          "technology_capabilities.md"
+        ],
         "available_evidence_sources": [
           "case_studies.md",
           "cloud_capabilities.md",
           "technology_capabilities.md"
         ],
-        "fully_grounded": false
+        "fully_grounded": true
       },
       {
         "requirement_id": "R-EVAL-04",
@@ -287,13 +290,16 @@
       },
       {
         "requirement_id": "R-EVAL-06",
-        "citations": [],
+        "citations": [
+          "case_studies.md",
+          "cloud_capabilities.md"
+        ],
         "available_evidence_sources": [
           "case_studies.md",
           "certifications.md",
           "cloud_capabilities.md"
         ],
-        "fully_grounded": false
+        "fully_grounded": true
       },
       {
         "requirement_id": "R-EVAL-07",
@@ -311,7 +317,8 @@
       {
         "requirement_id": "R-EVAL-08",
         "citations": [
-          "company_overview.md"
+          "company_overview.md",
+          "cybersecurity_capabilities.md"
         ],
         "available_evidence_sources": [
           "certifications.md",
@@ -346,14 +353,16 @@
       },
       {
         "requirement_id": "R-EVAL-11",
-        "citations": [],
+        "citations": [
+          "team_credentials.md"
+        ],
         "available_evidence_sources": [
           "case_studies.md",
           "certifications.md",
           "past_project_experience.md",
           "team_credentials.md"
         ],
-        "fully_grounded": false
+        "fully_grounded": true
       },
       {
         "requirement_id": "R-EVAL-12",

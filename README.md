@@ -132,9 +132,14 @@ is plain Python, on purpose (see §12).
 ## 7. Workflow (node by node)
 
 1. **ingest_rfp** *(deterministic)* — normalizes whitespace on the parsed RFP text.
-2. **extract_requirements** *(LLM, structured output)* — breaks the RFP into atomic
-   `Requirement` objects (id, category, mandatory/optional, deadline, requested capability,
-   evidence needed).
+2. **extract_requirements** *(LLM, structured output, chunked by section)* — splits the RFP on its
+   own section headings (Markdown `##` headers, or plain numbered headings as a fallback; a
+   fixed-size safety net for anything with no detectable structure — see `split_into_sections` in
+   `nodes.py`) and extracts atomic `Requirement` objects per section, then renumbers sequentially.
+   One call per section keeps output well under the model's max-tokens ceiling regardless of RFP
+   size — the earlier single-call version failed outright on a large real RFP during testing (see
+   §13). The prompt is explicit that pure background/narrative sections should yield an *empty*
+   list, since per-section framing loses the whole-document context that made that obvious.
 3. **classify_requirements** *(LLM, structured output)* — reviews the *full list at once* to
    apply a consistent category taxonomy (catches the case where two similar requirements would
    otherwise get inconsistent categories from independent single-item classification).
@@ -183,20 +188,33 @@ cd backend && source .venv/bin/activate && python -m eval.run_eval
 
 | Metric | Result |
 |---|---|
-| Requirement extraction (sample RFP, 19 hand-counted requirements) | 19/19 extracted, 100% field completeness |
+| Requirement extraction (sample RFP, 20 hand-counted requirements) | 20/20 extracted, 100% field completeness |
 | Retrieval hit-rate (expected source doc in top-4) | 100% (11/11 scored cases) |
 | Capability classification accuracy | 72.7% (8/11) |
-| Evidence grounding rate (citations ⊆ retrieved sources) | 75% (9/12) |
+| Evidence grounding rate (citations ⊆ retrieved sources) | 100% (12/12) |
 | Validator recall on deliberately flawed drafts | 100% (2/2) |
 
-These numbers move a few points between runs — the chat model is called at `temperature=0.1`,
-not `0`, so grounding/classification on borderline cases isn't perfectly repeatable; retrieval
-hit-rate and validator recall have stayed at 100% across every run so far. The classification
-accuracy is the most interesting number, not the highest: the 3 misses were
-all the model calling `Not Supported` where the label was `Insufficient Evidence` (or vice versa)
-— exactly the boundary the system is designed to draw carefully (§ "capability assessment" in the
-original brief). It's a genuine, demonstrable limitation of a single `gpt-4o-mini` classification
-pass on subtly-worded evidence, not a bug — and a good discussion point on how you'd improve it in
+The grounding rate is a good example of what this eval harness is actually for: an earlier run
+scored 58.3% here, and the failure detail (`eval/results.json` → `evidence_grounding.details`)
+showed every failure had `citations: []` — the drafting prompt told the model to state a
+capability gap plainly, but never told it to still name which document it *checked* to reach that
+conclusion, so "Not Supported"/"Insufficient Evidence" responses routinely shipped with no
+citation. That also explains a separate thing noticed during manual testing: gap-finding
+requirements tended to burn through all `MAX_REVISIONS` attempts, because a missing citation
+always fails `validate_response`'s deterministic `citation_present` check, however good the
+response text is. Fixed by making `DRAFT_RESPONSE_SYSTEM` (`backend/app/graph/prompts.py`)
+require a "reviewed: `<doc>` — no mention of X" citation for negative findings too, not just
+positive ones — grounding went to 100% and gap-finding responses stopped needlessly maxing out
+the revision loop.
+
+These numbers can still move a point or two between runs — the chat model is called at
+`temperature=0.1`, not `0` — but retrieval hit-rate and validator recall have stayed at 100%
+across every run so far. The classification accuracy is the most interesting number, not the
+highest: the 3 misses were all the model calling `Not Supported` where the label was
+`Insufficient Evidence` (or vice versa) — exactly the boundary the system is designed to draw
+carefully (§ "capability assessment" in the original brief). It's a genuine, demonstrable
+limitation of a single `gpt-4o-mini` classification pass on subtly-worded evidence, not a bug —
+and a good discussion point on how you'd improve it in
 production (few-shot examples per category, a second-pass reconciliation prompt, or a larger
 model for this specific call).
 
@@ -285,8 +303,12 @@ requirement-evidence retrieval.
 - **Capability classification accuracy is ~73% on the eval set** (§9) — the `Not Supported` vs.
   `Insufficient Evidence` boundary is genuinely hard for a single `gpt-4o-mini` pass on subtly
   worded evidence.
-- **RFP size.** Extraction sends the full RFP text in one call; a very large RFP (well beyond the
-  ~19-requirement sample) would need chunked, section-by-section extraction with a merge step.
+- **RFP size, partially mitigated.** `extract_requirements` chunks the RFP by section (§7) instead
+  of sending it in one call, which is what fixes the large-RFP failure mode this project actually
+  hit in testing (a single call's output got truncated past the model's max-tokens ceiling on a
+  ~23k-token real RFP). What's still unhandled: a single *section* with an unusually dense run of
+  requirements and no sub-headings could itself exceed the per-call output ceiling — the fixed-size
+  safety-net splitter bounds input size, not the number of requirements a section could produce.
 - **English only**, by construction of the demo knowledge base and prompts.
 
 ## 14. Future improvements
@@ -295,7 +317,8 @@ requirement-evidence retrieval.
   scales across instances.
 - Add a second-pass reconciliation LLM call specifically for the `Not Supported` vs.
   `Insufficient Evidence` boundary that §9 shows is the main source of classification error.
-- Chunked/hierarchical extraction for RFPs too large for a single-call context window.
+- Extend `split_into_sections` to also bound requirement *density* within a section (not just
+  section character length), for the edge case noted in §13.
 - Authentication + per-user knowledge bases, for a real multi-tenant proposal team.
 - Swap `langchain-community` document loaders for the standalone integration packages it's being
   split into (it currently emits a deprecation warning — functional today, but worth tracking).
